@@ -1,5 +1,9 @@
 # Flask Mongo Sample
 
+This sample app stores data for pets and owners. A pet has one owner, while an owner may have many pets. This is the same relationship between events and users in your UW Link project!
+
+## Setup and Running
+
 These instructions are Linux/Mac specific - Windows probably works too.
 
 To setup your virtualenv:
