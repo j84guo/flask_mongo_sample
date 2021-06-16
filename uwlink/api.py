@@ -37,7 +37,7 @@ def create_owner():
     return owner.to_dict()
 
 
-@api.route('/owners', methods=['GET'])
+@api.route('/pets', methods=['GET'])
 def get_all_pets():
     return jsonify([o.to_dict() for o in Pet.objects])
 
