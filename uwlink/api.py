@@ -42,7 +42,7 @@ def get_all_pets():
     return jsonify([o.to_dict() for o in Pet.objects])
 
 
-@api.route('/owners/<string:owner_id>', methods=['GET'])
+@api.route('/pets/<string:pet_id>', methods=['GET'])
 def get_pet(pet_id):
     return Pet.objects.get_or_404(id=pet_id).to_dict()
 
@@ -69,4 +69,14 @@ def create_pet():
     owner.pets.append(str(pet.id))
     owner.save()
 
+    # You might be familar with the concept of transactions. A transaction is
+    # a group of operations which must either all succeed or all fail - this
+    # preserves data consistency. In a production application, you could argue
+    # that this function should indeed perform a transaction with the database
+    # (which MongoDB supports).
+    #
+    # For our prototype, this might be overkill. You can explore transactions
+    # if you're interested.
+    #
+    # https://docs.mongodb.com/manual/core/transactions/
     return pet.to_dict()

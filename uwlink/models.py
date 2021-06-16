@@ -33,6 +33,7 @@ class Pet(db.Document):
 
     def to_dict(self):
         return {
+            "pet_id": str(self.id),
             "name": self.name,
             "type": self.type,
             "owner_id": self.owner_id
