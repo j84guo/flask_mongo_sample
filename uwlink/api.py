@@ -15,7 +15,7 @@ api = Blueprint('api', __name__)
 # the provided password will be hashed, and that hash will be compared to the stored hash for the user
 #
 # https://en.wikipedia.org/wiki/Cryptographic_hash_function#Password_verification
-@api.route('/owners', methods=['POST'])
+@api.route('/signup', methods=['POST'])
 def signup():
     request_json = request.get_json()
     owner = Owner(username=request_json['username'],
