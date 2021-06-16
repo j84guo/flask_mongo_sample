@@ -1,7 +1,7 @@
 from flask import Flask
 from flask_mongoengine import MongoEngine
 
-# MongoEngine is a library for easily working with MongoDB from Python. The classes in uwlink/models.py are
+# MongoEngine is a library for easily working with MongoDB from Python. The classes in uwlink/models.py
 # correspond to separate MongoDB collections (automatically created if not exists) and instances of those classes
 # correspond to documents within those collections
 #
