@@ -18,9 +18,13 @@ class Owner(db.Document):
     pets = db.ListField(db.StringField())
     joined_at = db.DateTimeField()
 
+    # No need to include this in to_dict
+    hashed_password = db.StringField()
+
     def to_dict(self):
         return {
             "owner_id": str(self.id),
+            "username": self.username,
             "pets": self.pets,
             "joined_at": self.joined_at
         }

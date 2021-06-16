@@ -1,5 +1,6 @@
 from flask import Flask
 from flask_mongoengine import MongoEngine
+from flask_jwt_extended import JWTManager
 
 # MongoEngine is a library for easily working with MongoDB from Python. The classes in uwlink/models.py
 # correspond to separate MongoDB collections (automatically created if not exists) and instances of those classes
@@ -13,6 +14,9 @@ from flask_mongoengine import MongoEngine
 #
 # http://docs.mongoengine.org/projects/flask-mongoengine/en/latest/
 db = MongoEngine()
+
+# Flask JWT Extended is a library for easily generating and validating JWT tokens for authentication purposes
+jwt = JWTManager()
 
 def create_app():
     app = Flask(__name__)
@@ -28,6 +32,12 @@ def create_app():
     app.config['MONGODB_HOST'] = 'mongodb+srv://{}:{}@cluster0.ryror.mongodb.net/uwlink?retryWrites=true&w=majority'\
         .format(mongo_username, mongo_password)
     db.init_app(app)
+
+    # Like the DB credentials, this should not be harcoded
+    #
+    # This is used by Flask for various tasks, like signing cookies
+    app.config['SECRET_KEY'] = 'a super secret key'
+    jwt.init_app(app)
 
     # Register the API endpoints we defined in uwlink/api.py
     from uwlink.api import api
