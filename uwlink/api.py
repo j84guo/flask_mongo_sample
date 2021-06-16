@@ -30,6 +30,10 @@ def signup():
 # have the JWT token as an HTTP header to be authenticated. Specifically, the header should looks like this
 #
 # Authorization: Bearer <JWT token>
+#
+# E.g.
+# curl --location --request GET 'localhost:5000/owners' \
+#      --header 'Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTYyMzg4MzE1OSwianRpIjoiMDI4YzFiOTItYTcwOS00MGQ1LTg5ODgtNzViNDU4ODkyMTQ2IiwidHlwZSI6ImFjY2VzcyIsInN1YiI6IjYwY2E3N2U4OTYzN2QwNTU3ZGIyMGU3ZSIsIm5iZiI6MTYyMzg4MzE1OSwiZXhwIjoxNjIzODg0MDU5fQ.CsbQiFindDtLg6hWbBG6Dey1Tfp_XexhRDS3P3omlxw'
 @api.route('/login', methods=['POST'])
 def login():
     request_json = request.get_json()
