@@ -1,21 +1,42 @@
 import datetime
 
 from flask import Blueprint, jsonify, request
-from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required
+from flask_login import (
+    UserMixin,
+    current_user,
+    login_required,
+    login_user,
+)
 from mongoengine.errors import DoesNotExist
+from uwlink import login_manager
 from uwlink.models import Owner, Pet
 from werkzeug.security import check_password_hash, generate_password_hash
 
 
 # In Flask, a blueprint is just a group of related routes (the functions below), it helps organize your code
-api = Blueprint('api', __name__)
+routes = Blueprint('api', __name__)
+
+
+class User(UserMixin):
+    def __init__(self, owner):
+        self.id = owner.id
+        self.owner = owner
+
+
+@login_manager.user_loader
+def user_loader(owner_id):
+    try:
+        owner = Owner.objects.get(id=owner_id)
+        return User(owner)
+    except DoesNotExist:
+        return None
 
 
 # Signup creates a new user. Note that we store a HASH of the user's password - this is a common practice. On login,
 # the provided password will be hashed, and that hash will be compared to the stored hash for the user
 #
 # https://en.wikipedia.org/wiki/Cryptographic_hash_function#Password_verification
-@api.route('/signup', methods=['POST'])
+@routes.route('/signup', methods=['POST'])
 def signup():
     request_json = request.get_json()
     owner = Owner(username=request_json['username'],
@@ -34,14 +55,15 @@ def signup():
 # E.g.
 # curl --location --request GET 'localhost:5000/owners' \
 #      --header 'Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTYyMzg4MzE1OSwianRpIjoiMDI4YzFiOTItYTcwOS00MGQ1LTg5ODgtNzViNDU4ODkyMTQ2IiwidHlwZSI6ImFjY2VzcyIsInN1YiI6IjYwY2E3N2U4OTYzN2QwNTU3ZGIyMGU3ZSIsIm5iZiI6MTYyMzg4MzE1OSwiZXhwIjoxNjIzODg0MDU5fQ.CsbQiFindDtLg6hWbBG6Dey1Tfp_XexhRDS3P3omlxw'
-@api.route('/login', methods=['POST'])
+@routes.route('/login', methods=['POST'])
 def login():
     request_json = request.get_json()
     try:
         owner = Owner.objects.get(username=request_json['username'])
         if check_password_hash(owner.hashed_password, request_json['password']):
-            access_token = create_access_token(identity=str(owner.id))
-            return jsonify(access_token=access_token)
+            user = User(owner)
+            login_user(user)
+            return "logged in"
     except DoesNotExist:
         pass
     return 'Incorrect username or password', 400
@@ -49,16 +71,16 @@ def login():
 
 # Getting all the documents in a collection is usually not a good idea (too many), but this is just provided to help you
 # explore the database through the API
-@api.route('/owners', methods=['GET'])
-@jwt_required()
+@routes.route('/owners', methods=['GET'])
+@login_required
 def get_all_owners():
     # Owner.objects is an iterable that will iterate over all documents from the owner collection in MongoDB. We
     # construct a list out of this iterable and convert it to json
     return jsonify([o.to_dict() for o in Owner.objects])
 
 
-@api.route('/owners/<string:owner_id>', methods=['GET'])
-@jwt_required()
+@routes.route('/owners/<string:owner_id>', methods=['GET'])
+@login_required
 def get_owner(owner_id):
     # In MongoDB, all documents have an implicit _id primary key - MongoEngine allows you to lookup documents by _id
     # using the id keyword argument
@@ -69,25 +91,25 @@ def get_owner(owner_id):
     return Owner.objects.get_or_404(id=owner_id).to_dict()
 
 
-@api.route('/pets', methods=['GET'])
-@jwt_required()
+@routes.route('/pets', methods=['GET'])
+@login_required
 def get_all_pets():
     return jsonify([o.to_dict() for o in Pet.objects])
 
 
-@api.route('/pets/<string:pet_id>', methods=['GET'])
-@jwt_required()
+@routes.route('/pets/<string:pet_id>', methods=['GET'])
+@login_required
 def get_pet(pet_id):
     return Pet.objects.get_or_404(id=pet_id).to_dict()
 
 
-@api.route('/pets', methods=['POST'])
-@jwt_required()
+@routes.route('/pets', methods=['POST'])
+@login_required
 def create_pet():
     request_json = request.get_json()
 
     # Get owner_id from the provided JWT token
-    owner_id = get_jwt_identity()
+    owner_id = current_user.get_id()
 
     # Get the current owner (throws exception if doesn't exist)
     owner = Owner.objects.get(id=owner_id)
