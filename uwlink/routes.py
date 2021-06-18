@@ -1,10 +1,10 @@
 import datetime
 
-from flask import Blueprint, jsonify, request, render_template
+from flask import Blueprint, jsonify, request, render_template, flash, redirect, url_for
 from flask_login import UserMixin, current_user, login_required, login_user
 from mongoengine.errors import DoesNotExist
 from uwlink import login_manager
-from uwlink.forms import LoginForm
+from uwlink.forms import LoginForm, SignupForm
 from uwlink.models import Owner, Pet
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -32,31 +32,22 @@ def user_loader(owner_id):
 # the provided password will be hashed, and that hash will be compared to the stored hash for the user
 #
 # https://en.wikipedia.org/wiki/Cryptographic_hash_function#Password_verification
-@routes.route('/signup', methods=['POST'])
+@routes.route('/signup', methods=['GET', 'POST'])
 def signup():
-    request_json = request.get_json()
-    owner = Owner(username=request_json['username'],
-                  pets=[],
-                  joined_at=datetime.datetime.now(),
-                  hashed_password=generate_password_hash(request_json['password']))
-    owner.save()
-    return owner.to_dict()
+    form = SignupForm()
+    if form.validate_on_submit():
+        owner = Owner(username=form.username.data,
+                      pets=[],
+                      joined_at=datetime.datetime.now(),
+                      hashed_password=generate_password_hash(form.password.data))
+        owner.save()
+        flash('You have been signed up!')
+        return redirect(url_for('.login'))
+    return render_template('signup.html', form=form)
 
-# If the user's credentials are valid, we provide a JWT token. All requests to endpoints marked with @jwt_required must
-# have the JWT token as an HTTP header to be authenticated. Specifically, the header should looks like this
-#
-# Authorization: Bearer <JWT token>
-#
-# E.g.
-# curl --location --request GET 'localhost:5000/owners' \
-#      --header 'Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTYyMzg4MzE1OSwianRpIjoiMDI4YzFiOTItYTcwOS00MGQ1LTg5ODgtNzViNDU4ODkyMTQ2IiwidHlwZSI6ImFjY2VzcyIsInN1YiI6IjYwY2E3N2U4OTYzN2QwNTU3ZGIyMGU3ZSIsIm5iZiI6MTYyMzg4MzE1OSwiZXhwIjoxNjIzODg0MDU5fQ.CsbQiFindDtLg6hWbBG6Dey1Tfp_XexhRDS3P3omlxw'
 @routes.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
-
-    if request.method == 'GET':
-        return render_template('login.html', form=form)
-
     if form.validate_on_submit():
         try:
             owner = Owner.objects.get(username=form.username.data)
@@ -66,7 +57,7 @@ def login():
                 return "logged in"
         except DoesNotExist:
             pass
-        return 'Incorrect username or password', 400
+    return render_template('login.html', form=form)
 
 
 # Getting all the documents in a collection is usually not a good idea (too many), but this is just provided to help you
