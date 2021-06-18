@@ -1,5 +1,6 @@
 from flask import Flask
 from flask_mongoengine import MongoEngine
+from flask_bootstrap import Bootstrap
 from flask_login import LoginManager
 
 # MongoEngine is a library for easily working with MongoDB from Python. The classes in uwlink/models.py
@@ -14,6 +15,8 @@ from flask_login import LoginManager
 #
 # http://docs.mongoengine.org/projects/flask-mongoengine/en/latest/
 db = MongoEngine()
+
+bootstrap = Bootstrap()
 
 login_manager = LoginManager()
 
@@ -31,6 +34,8 @@ def create_app():
     app.config['MONGODB_HOST'] = 'mongodb+srv://{}:{}@cluster0.ryror.mongodb.net/uwlink?retryWrites=true&w=majority'\
         .format(mongo_username, mongo_password)
     db.init_app(app)
+
+    bootstrap.init_app(app)
 
     # Like the DB credentials, this should not be harcoded
     #

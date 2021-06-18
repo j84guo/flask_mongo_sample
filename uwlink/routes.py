@@ -1,14 +1,10 @@
 import datetime
 
-from flask import Blueprint, jsonify, request
-from flask_login import (
-    UserMixin,
-    current_user,
-    login_required,
-    login_user,
-)
+from flask import Blueprint, jsonify, request, render_template
+from flask_login import UserMixin, current_user, login_required, login_user
 from mongoengine.errors import DoesNotExist
 from uwlink import login_manager
+from uwlink.forms import LoginForm
 from uwlink.models import Owner, Pet
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -46,7 +42,6 @@ def signup():
     owner.save()
     return owner.to_dict()
 
-
 # If the user's credentials are valid, we provide a JWT token. All requests to endpoints marked with @jwt_required must
 # have the JWT token as an HTTP header to be authenticated. Specifically, the header should looks like this
 #
@@ -55,18 +50,23 @@ def signup():
 # E.g.
 # curl --location --request GET 'localhost:5000/owners' \
 #      --header 'Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTYyMzg4MzE1OSwianRpIjoiMDI4YzFiOTItYTcwOS00MGQ1LTg5ODgtNzViNDU4ODkyMTQ2IiwidHlwZSI6ImFjY2VzcyIsInN1YiI6IjYwY2E3N2U4OTYzN2QwNTU3ZGIyMGU3ZSIsIm5iZiI6MTYyMzg4MzE1OSwiZXhwIjoxNjIzODg0MDU5fQ.CsbQiFindDtLg6hWbBG6Dey1Tfp_XexhRDS3P3omlxw'
-@routes.route('/login', methods=['POST'])
+@routes.route('/login', methods=['GET', 'POST'])
 def login():
-    request_json = request.get_json()
-    try:
-        owner = Owner.objects.get(username=request_json['username'])
-        if check_password_hash(owner.hashed_password, request_json['password']):
-            user = User(owner)
-            login_user(user)
-            return "logged in"
-    except DoesNotExist:
-        pass
-    return 'Incorrect username or password', 400
+    form = LoginForm()
+
+    if request.method == 'GET':
+        return render_template('login.html', form=form)
+
+    if form.validate_on_submit():
+        try:
+            owner = Owner.objects.get(username=form.username.data)
+            if check_password_hash(owner.hashed_password, form.password.data):
+                user = User(owner)
+                login_user(user)
+                return "logged in"
+        except DoesNotExist:
+            pass
+        return 'Incorrect username or password', 400
 
 
 # Getting all the documents in a collection is usually not a good idea (too many), but this is just provided to help you
